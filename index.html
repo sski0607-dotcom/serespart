@@ -197,14 +197,16 @@ function refreshGuilds(re){
 }
 refreshGuilds(false);fillNames();
 const key=i=>`${day}_${period}_${i}`;
+const hr=i=>String(period?i:i%12).padStart(2,"0"); // 오전 00~11, 오후 12~11
+const ORDER=[12,1,2,3,4,5,6,7,8,9,10,11];
 const blank=()=>({p:[[],[],[],[]],s:["","","",""],w:[]});
 const get=i=>{const d=slots[key(i)]||blank();d.w=d.w||[];return d};
 const opts=v=>`<option value="">-</option>`+Object.keys(GC).map(g=>`<option value="${esc(g)}"${g===v?" selected":""}>${esc(g)}</option>`).join("");
 function render(){
   let h="";
-  for(let i=1;i<=12;i++){
+  for(const i of ORDER){
     const d=get(i);
-    h+=`<div class="card"><div class="hd">${String(i).padStart(2,"0")} : 00</div><div class="parties">`;
+    h+=`<div class="card"><div class="hd">${hr(i)} : 00</div><div class="parties">`;
     MATS.forEach((mn,x)=>{
       const ms=d.p[x],need=SIZE-ms.length;
       h+=`<div class="party"><div class="ph"><span>${mn}</span><span class="need ${need?"":"full"}">${need?`필요 ${need}명`:"완료"}</span></div>`;
@@ -224,7 +226,7 @@ async function saveSlot(i,d){
   try{const {error}=await sb.from("board").upsert({id:k,date:day,data:JSON.stringify(d)});if(error)throw error}catch(e){$("note").textContent="저장 실패: 잠시 후 다시 시도해 주세요."}
 }
 $("wmc").innerHTML=MATS.map((m,i)=>`<label><input type="checkbox" value="${i}">${m}</label>`).join("");
-function openJoin(i,x){pending={i,x};$("wm").hidden=x>=0;document.querySelectorAll("#wmc input").forEach(c=>c.checked=false);$("dt").textContent=`${period?"오후":"오전"} ${String(i).padStart(2,"0")}:00 · ${x<0?"대기 신청":MATS[x]+" 파티 참가"}`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
+function openJoin(i,x){pending={i,x};$("wm").hidden=x>=0;document.querySelectorAll("#wmc input").forEach(c=>c.checked=false);$("dt").textContent=`${period?"오후":"오전"} ${hr(i)}:00 · ${x<0?"대기 신청":MATS[x]+" 파티 참가"}`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
 let wpend=null;
 function openW(v){
   const [i,k]=v.split(":").map(Number),d=get(i),m=d.w[k];if(!m)return;wpend={i,k};
@@ -241,7 +243,7 @@ $("grid").onclick=e=>{
   if(wt){openJoin(+wt.dataset.wait,-1);return}
   if(wc){openW(wc.dataset.w);return}
   const a=e.target.dataset.add,r=e.target.dataset.rm;
-  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("wm").hidden=true;$("dt").textContent=`${period?"오후":"오전"} ${String(i).padStart(2,"0")}:00 · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
+  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("wm").hidden=true;$("dt").textContent=`${period?"오후":"오전"} ${hr(i)}:00 · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
   if(r){const [i,x,k]=r.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.p[x].splice(k,1);saveSlot(i,d)}
 };
 $("grid").onchange=e=>{
