@@ -43,22 +43,31 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 .legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .lgrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .lgrow .legend{margin:0}.lg{cursor:pointer}
-#addg,#mgr{padding:4px 10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;cursor:pointer;font-size:12px}
+#addg,#mgr,#adm{padding:4px 10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;cursor:pointer;font-size:12px}
 .cr{display:flex;gap:6px;align-items:center}.cr input[type=color]{width:42px;height:38px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
 .row .del{color:#c0392b}
 .ml{max-height:45vh;overflow:auto;margin-top:8px}
 .mi{display:flex;gap:6px;align-items:center;padding:4px 0;border-top:1px dashed var(--bd)}
 .mi .nm{flex:1;min-width:0}.mi select{width:auto;padding:4px;font-size:13px}
 #mdlg{width:min(440px,94vw)}
+.wl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd);font-size:12px;color:var(--mu)}
+.wchip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:2px 6px;cursor:pointer;color:var(--mu)}
+.wchip small{font-size:10px}
+.wl .wadd{border:1px dashed var(--bd);background:none;color:var(--mu);border-radius:8px;padding:3px 8px;cursor:pointer;font-size:12px}
 #note{color:#c0392b;font-size:12px}
 </style></head>
 <body><main>
 <h1>🍵 필보 파티모집</h1>
 <div class="sub">6층 필드보스 재료 · 재료별 1파티(최대 4명) · 매일 0시(KST) 자동 초기화 · <span id="cd"></span></div>
-<div class="lgrow"><div class="legend" id="legend"></div><button id="addg">+ 길드 추가 / 색 변경</button><button id="mgr">닉네임 관리</button></div>
+<div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="mgr" hidden>닉네임 관리</button></div>
 <div id="note"></div>
 <div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button></div>
 <div class="grid" id="grid"></div>
+<dialog id="wdlg">
+<b id="wtitle"></b>
+<label>배정할 파티</label><select id="wsel"></select>
+<div class="row"><button id="wcancel">대기 취소</button><button id="wclose">닫기</button><button class="go" id="wgo">배정</button></div>
+</dialog>
 <dialog id="mdlg">
 <b>닉네임 관리 <span id="mcount" class="sub"></span></b>
 <label>새 닉네임 추가</label>
@@ -81,6 +90,7 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 <b id="dt"></b>
 <label>마크 닉네임</label><input type="text" id="nick" list="nl" autocomplete="off"><datalist id="nl"></datalist>
 <label>길드</label><select id="gs"></select>
+<div id="wm" hidden><label>원하는 재료 (선택 · 비우면 아무거나)</label><div class="chk" id="wmc"></div></div>
 <div id="derr" style="color:#c0392b;font-size:12px;margin-top:6px"></div>
 <div class="row"><button id="cancel">취소</button><button class="go" id="save">참가</button></div>
 </dialog>
@@ -99,10 +109,10 @@ try {
 } catch (e) {
   // 서버에 연결하지 못해도 화면은 정상 표시 (이 화면에서만 임시 동작)
   offlineMsg = "서버에 연결되지 않아 이 화면에서만 임시로 동작합니다. (Supabase 설정값을 확인해 주세요)";
-  const q = { select: async () => ({ error: 1 }), upsert: async () => ({ error: 1 }), eq: async () => ({ error: 1 }), neq: async () => ({ error: 1 }) };
+  const q = { insert: async () => ({ error: 1 }), select: async () => ({ error: 1 }), upsert: async () => ({ error: 1 }), eq: async () => ({ error: 1 }), neq: async () => ({ error: 1 }) };
   q.delete = () => q;
   const ch = { on: () => ch, subscribe: () => ch };
-  sb = { from: () => q, channel: () => ch };
+  sb = { from: () => q, channel: () => ch, rpc: async () => ({ error: 1 }) };
 }
 
 const GC={"티타임":["#FFFAD3","#7C2D12"],"달무리":["#DC95FF","#8C56D4"],"정예":["#66A3BF","#3368A0"],"마인천":["#D51C39","#FF6060"],"타길드":["#E2E8F0","#475569"]};
@@ -158,7 +168,7 @@ const MATS=["암반","천공","작열","고룡"],SIZE=4;
 const guildOf={},names=[];
 ROSTER.split("\n").forEach(l=>{const [n,g]=l.trim().split(/\s+/);if(n){guildOf[n.toLowerCase()]=g;names.push(n)}});
 const $=id=>document.getElementById(id);
-const saveMember=(n,g)=>{sb.from("members").upsert({id:mid(n),n,g}).then(()=>{})};
+const saveMember=(n,g)=>{(ADMIN_PW?sb.rpc("admin_upsert_member",{pw:ADMIN_PW,p_id:mid(n),p_n:n,p_g:g}):sb.from("members").insert({id:mid(n),n,g})).then(()=>{})};
 const baseSet=new Set(Object.keys(guildOf));
 const addName=n=>{if(!names.includes(n)){names.push(n);const o=document.createElement("option");o.value=n;$("nl").appendChild(o)}};
 const mid=n=>n.toLowerCase().replace(/[^a-z0-9_\-]/g,"_");
@@ -177,8 +187,8 @@ function refreshGuilds(re){
 }
 refreshGuilds(false);
 const key=i=>`${day}_${period}_${i}`;
-const blank=()=>({p:[[],[],[],[]],s:["","","",""]});
-const get=i=>slots[key(i)]||blank();
+const blank=()=>({p:[[],[],[],[]],s:["","","",""],w:[]});
+const get=i=>{const d=slots[key(i)]||blank();d.w=d.w||[];return d};
 const opts=v=>`<option value="">-</option>`+Object.keys(GC).map(g=>`<option value="${esc(g)}"${g===v?" selected":""}>${esc(g)}</option>`).join("");
 function render(){
   let h="";
@@ -195,7 +205,7 @@ function render(){
       }
       h+=`<div class="sg">제출길드<select data-sg="${i}:${x}">${opts(d.s[x])}</select></div></div>`;
     });
-    h+=`</div></div>`;
+    h+=`</div><div class="wl"><span>대기 ${d.w.length}</span>`+d.w.map((m,k)=>`<button class="wchip" data-w="${i}:${k}">${chip(esc(m.n),m.g)}<small>${m.m.length?m.m.map(x=>MATS[x]).join("·"):"아무거나"}</small></button>`).join("")+`<button class="wadd" data-wait="${i}">+ 대기</button></div></div>`;
   }
   $("grid").innerHTML=h;
 }
@@ -203,9 +213,25 @@ async function saveSlot(i,d){
   const k=key(i);slots[k]=d;render();
   try{const {error}=await sb.from("board").upsert({id:k,date:day,data:JSON.stringify(d)});if(error)throw error}catch(e){$("note").textContent="저장 실패: 잠시 후 다시 시도해 주세요."}
 }
+$("wmc").innerHTML=MATS.map((m,i)=>`<label><input type="checkbox" value="${i}">${m}</label>`).join("");
+function openJoin(i,x){pending={i,x};$("wm").hidden=x>=0;document.querySelectorAll("#wmc input").forEach(c=>c.checked=false);$("dt").textContent=`${period?"오후":"오전"} ${String(i).padStart(2,"0")}:00 · ${x<0?"대기 신청":MATS[x]+" 파티 참가"}`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";$("dlg").showModal();$("nick").focus()}
+let wpend=null;
+function openW(v){
+  const [i,k]=v.split(":").map(Number),d=get(i),m=d.w[k];if(!m)return;wpend={i,k};
+  $("wtitle").textContent=`${m.n} · 대기${m.m.length?" ("+m.m.map(x=>MATS[x]).join("·")+")":""}`;
+  const o=MATS.map((mn,x)=>({mn,x,left:SIZE-d.p[x].length})).filter(a=>a.left>0);
+  $("wsel").innerHTML=o.length?o.map(a=>`<option value="${a.x}">${a.mn} (필요 ${a.left}명)</option>`).join(""):"<option value=''>빈 자리 없음</option>";
+  $("wgo").disabled=!o.length;$("wdlg").showModal();
+}
+$("wclose").onclick=()=>$("wdlg").close();
+$("wcancel").onclick=()=>{const {i,k}=wpend,d=JSON.parse(JSON.stringify(get(i)));d.w.splice(k,1);$("wdlg").close();saveSlot(i,d)};
+$("wgo").onclick=()=>{const {i,k}=wpend,x=+$("wsel").value,d=JSON.parse(JSON.stringify(get(i))),m=d.w[k];if(!m||d.p[x].length>=SIZE)return;d.w.splice(k,1);d.p[x].push({n:m.n,g:m.g});if(!d.s[x])d.s[x]=m.g;$("wdlg").close();saveSlot(i,d)};
 $("grid").onclick=e=>{
+  const wt=e.target.closest("[data-wait]"),wc=e.target.closest("[data-w]");
+  if(wt){openJoin(+wt.dataset.wait,-1);return}
+  if(wc){openW(wc.dataset.w);return}
   const a=e.target.dataset.add,r=e.target.dataset.rm;
-  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("dt").textContent=`${period?"오후":"오전"} ${String(i).padStart(2,"0")}:00 · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";$("dlg").showModal();$("nick").focus()}
+  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("wm").hidden=true;$("dt").textContent=`${period?"오후":"오전"} ${String(i).padStart(2,"0")}:00 · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";$("dlg").showModal();$("nick").focus()}
   if(r){const [i,x,k]=r.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.p[x].splice(k,1);saveSlot(i,d)}
 };
 $("grid").onchange=e=>{
@@ -218,13 +244,14 @@ $("save").onclick=async()=>{
   const n=$("nick").value.trim();if(!n){$("nick").focus();return}
   try{const {data:r}=await sb.from("board").select("data").eq("id",key(pending.i)).maybeSingle();if(r&&r.data)slots[key(pending.i)]=JSON.parse(r.data)}catch(e){}
   const {i,x}=pending,d=JSON.parse(JSON.stringify(get(i)));
-  if(d.p[x].length>=SIZE){$("derr").textContent="이 파티는 이미 가득 찼어요.";return}
-  if(d.p.some(p=>p.some(m=>m.n.toLowerCase()===n.toLowerCase()))){$("derr").textContent=`${n}님은 이 시간대에 이미 참가 중이에요. (한 시간대에 한 번만 참가할 수 있어요)`;$("nick").focus();return}
+  if(x>=0&&d.p[x].length>=SIZE){$("derr").textContent="이 파티는 이미 가득 찼어요.";return}
+  const lc=n.toLowerCase(),inW=d.w.some(m=>m.n.toLowerCase()===lc);if(d.p.some(p=>p.some(m=>m.n.toLowerCase()===lc))||(x<0&&inW)){$("derr").textContent=`${n}님은 이 시간대에 이미 참가/대기 중이에요. (한 시간대에 한 번만 가능해요)`;$("nick").focus();return}
   $("derr").textContent="";$("note").textContent="";
   const key0=n.toLowerCase(),known=guildOf[key0];
   const g=known||$("gs").value;
   if(!known){guildOf[key0]=g;addName(n);saveMember(n,g)}
-  d.p[x].push({n,g});if(!d.s[x])d.s[x]=g;
+  d.w=d.w.filter(m=>m.n.toLowerCase()!==lc);
+  if(x<0){d.w.push({n,g,m:[...document.querySelectorAll("#wmc input:checked")].map(c=>+c.value)})}else{d.p[x].push({n,g});if(!d.s[x])d.s[x]=g}
   $("dlg").close();saveSlot(i,d);
 };
 [0,1].forEach(p=>$("t"+p).onclick=()=>{period=p;$("t0").classList.toggle("on",!p);$("t1").classList.toggle("on",!!p);render()});
@@ -263,7 +290,7 @@ function openG(name){
   $("gerr").textContent="";$("gdel").hidden=!(name&&GC[name]&&!DEFAULTS.has(name));gpv();$("gdlg").showModal();
 }
 $("addg").onclick=()=>openG("");
-$("legend").onclick=e=>{const t=e.target.closest(".lg");if(t)openG(t.dataset.g)};
+$("legend").onclick=e=>{const t=e.target.closest(".lg");if(t&&ADMIN_PW)openG(t.dataset.g)};
 $("gn").oninput=gpv;
 [["bgp","bgt"],["fgp","fgt"]].forEach(([p,t])=>{$(p).oninput=()=>{$(t).value=$(p).value;gpv()};$(t).oninput=()=>{const v=normHex($(t).value);if(isHex(v))$(p).value=v.toLowerCase();gpv()}});
 $("gcancel").onclick=()=>$("gdlg").close();
@@ -272,13 +299,26 @@ $("gsave").onclick=async()=>{
   if(!n||n.length>12){$("gerr").textContent="길드 이름은 1~12자로 입력해 주세요.";return}
   if(!isHex(bg)||!isHex(fg)){$("gerr").textContent="색상은 #RRGGBB 형식(예: #FFFAD3)으로 입력해 주세요.";return}
   GC[n]=[bg,fg];refreshGuilds(true);$("gdlg").close();
-  {const {error}=await sb.from("guilds").upsert({id:gid(n),name:n,bg,fg});if(error)$("note").textContent="길드 저장 실패: 잠시 후 다시 시도해 주세요."}
+  {const {error}=await sb.rpc("admin_upsert_guild",{pw:ADMIN_PW,p_id:gid(n),p_name:n,p_bg:bg,p_fg:fg});if(error)$("note").textContent="길드 저장 실패: 관리자 권한을 확인해 주세요."}
 };
 $("gdel").onclick=async()=>{
   const n=$("gn").value.trim();if(!n||DEFAULTS.has(n))return;
   delete GC[n];refreshGuilds(true);$("gdlg").close();
-  await sb.from("guilds").delete().eq("id",gid(n));
+  await sb.rpc("admin_delete_guild",{pw:ADMIN_PW,p_id:gid(n)});
 };
+let ADMIN_PW="";
+try{ADMIN_PW=localStorage.getItem("adm")||""}catch(e){}
+const clearAdm=()=>{ADMIN_PW="";try{localStorage.removeItem("adm")}catch(e){}};
+function setAdmin(on){$("addg").hidden=$("mgr").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자"}
+async function checkAdmin(pw){try{const {data,error}=await sb.rpc("admin_check",{pw});return !error&&data===true}catch(e){return false}}
+$("adm").onclick=async()=>{
+  if(ADMIN_PW){clearAdm();setAdmin(false);return}
+  const pw=prompt("관리자 비밀번호를 입력하세요");if(!pw)return;
+  if(await checkAdmin(pw)){ADMIN_PW=pw;try{localStorage.setItem("adm",pw)}catch(e){}setAdmin(true);$("note").textContent=""}
+  else $("note").textContent="비밀번호가 맞지 않습니다.";
+};
+setAdmin(false);
+if(ADMIN_PW)checkAdmin(ADMIN_PW).then(ok=>{if(ok)setAdmin(true);else clearAdm()});
 const fail=()=>{$("note").textContent=offlineMsg||"서버 연결 오류: Supabase 설정을 확인해 주세요."};
 async function loadGuilds(){
   const {data,error}=await sb.from("guilds").select("*");if(error||!data){fail();return}
