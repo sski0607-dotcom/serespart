@@ -43,7 +43,7 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 .legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
 .lgrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
 .lgrow .legend{margin:0}.lg{cursor:pointer}
-#addg,#mgr,#adm{padding:4px 10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;cursor:pointer;font-size:12px}
+#addg,#mgr,#adm,#lbtn{padding:4px 10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;cursor:pointer;font-size:12px}
 .cr{display:flex;gap:6px;align-items:center}.cr input[type=color]{width:42px;height:38px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
 .row .del{color:#c0392b}
 .ml{max-height:45vh;overflow:auto;margin-top:8px}
@@ -54,15 +54,22 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 .wchip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--bd);background:var(--bg);border-radius:8px;padding:2px 6px;cursor:pointer;color:var(--mu)}
 .wchip small{font-size:10px}
 .wl .wadd{border:1px dashed var(--bd);background:none;color:var(--mu);border-radius:8px;padding:3px 8px;cursor:pointer;font-size:12px}
+.li{border-top:1px dashed var(--bd);padding:6px 0;font-size:12px;line-height:1.5}.li .t{color:var(--mu);margin-right:6px}
+#ldlg{width:min(480px,94vw)}#ll{max-height:55vh;overflow:auto;margin-top:8px}
 #note{color:#c0392b;font-size:12px}
 </style></head>
 <body><main>
 <h1>🍵 필보 파티모집</h1>
 <div class="sub">6층 필드보스 재료 · 재료별 1파티(최대 4명) · 매일 0시(KST) 자동 초기화 · <span id="cd"></span></div>
-<div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="mgr" hidden>닉네임 관리</button></div>
+<div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="lbtn" hidden>변경 기록</button><button id="mgr" hidden>닉네임 관리</button></div>
 <div id="note"></div>
 <div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button></div>
 <div class="grid" id="grid"></div>
+<dialog id="ldlg">
+<b>변경 기록 (최근 200건)</b>
+<div id="ll"></div>
+<div class="row"><button id="lref">새로고침</button><button id="lclose" class="go">닫기</button></div>
+</dialog>
 <dialog id="wdlg">
 <b id="wtitle"></b>
 <label>배정할 파티</label><select id="wsel"></select>
@@ -168,7 +175,7 @@ const MATS=["암반","천공","작열","고룡"],SIZE=4;
 const guildOf={},names=[];
 ROSTER.split("\n").forEach(l=>{const [n,g]=l.trim().split(/\s+/);if(n){guildOf[n.toLowerCase()]=g;names.push(n)}});
 const $=id=>document.getElementById(id);
-const saveMember=(n,g)=>{(ADMIN_PW?sb.rpc("admin_upsert_member",{pw:ADMIN_PW,p_id:mid(n),p_n:n,p_g:g}):sb.from("members").insert({id:mid(n),n,g})).then(()=>{})};
+const saveMember=(n,g)=>{(ADMIN_PW?sb.rpc("admin_upsert_member",{pw:ADMIN_PW,p_id:mid(n),p_n:n,p_g:g,p_actor:ADMIN_NAME}):sb.from("members").insert({id:mid(n),n,g})).then(()=>{})};
 const baseSet=new Set(Object.keys(guildOf));
 function fillNames(){
   const g=$("gs").value;
@@ -303,26 +310,41 @@ $("gsave").onclick=async()=>{
   if(!n||n.length>12){$("gerr").textContent="길드 이름은 1~12자로 입력해 주세요.";return}
   if(!isHex(bg)||!isHex(fg)){$("gerr").textContent="색상은 #RRGGBB 형식(예: #FFFAD3)으로 입력해 주세요.";return}
   GC[n]=[bg,fg];refreshGuilds(true);$("gdlg").close();
-  {const {error}=await sb.rpc("admin_upsert_guild",{pw:ADMIN_PW,p_id:gid(n),p_name:n,p_bg:bg,p_fg:fg});if(error)$("note").textContent="길드 저장 실패: 관리자 권한을 확인해 주세요."}
+  {const {error}=await sb.rpc("admin_upsert_guild",{pw:ADMIN_PW,p_id:gid(n),p_name:n,p_bg:bg,p_fg:fg,p_actor:ADMIN_NAME});if(error)$("note").textContent="길드 저장 실패: 관리자 권한을 확인해 주세요."}
 };
 $("gdel").onclick=async()=>{
   const n=$("gn").value.trim();if(!n||DEFAULTS.has(n))return;
   delete GC[n];refreshGuilds(true);$("gdlg").close();
-  await sb.rpc("admin_delete_guild",{pw:ADMIN_PW,p_id:gid(n)});
+  await sb.rpc("admin_delete_guild",{pw:ADMIN_PW,p_id:gid(n),p_actor:ADMIN_NAME});
 };
-let ADMIN_PW="";
+let ADMIN_PW="",ADMIN_NAME="";
+try{ADMIN_NAME=localStorage.getItem("admn")||""}catch(e){}
 try{ADMIN_PW=localStorage.getItem("adm")||""}catch(e){}
 const clearAdm=()=>{ADMIN_PW="";try{localStorage.removeItem("adm")}catch(e){}};
-function setAdmin(on){$("addg").hidden=$("mgr").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자"}
+function setAdmin(on){$("addg").hidden=$("mgr").hidden=$("lbtn").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자"}
 async function checkAdmin(pw){try{const {data,error}=await sb.rpc("admin_check",{pw});return !error&&data===true}catch(e){return false}}
 $("adm").onclick=async()=>{
   if(ADMIN_PW){clearAdm();setAdmin(false);return}
   const pw=prompt("관리자 비밀번호를 입력하세요");if(!pw)return;
-  if(await checkAdmin(pw)){ADMIN_PW=pw;try{localStorage.setItem("adm",pw)}catch(e){}setAdmin(true);$("note").textContent=""}
+  if(await checkAdmin(pw)){
+    ADMIN_PW=pw;try{localStorage.setItem("adm",pw)}catch(e){}
+    ADMIN_NAME=(prompt("관리자 이름을 입력하세요 (변경 기록에 표시돼요)",ADMIN_NAME)||"관리자").trim().slice(0,20);
+    try{localStorage.setItem("admn",ADMIN_NAME)}catch(e){}
+    setAdmin(true);$("note").textContent=""}
   else $("note").textContent="비밀번호가 맞지 않습니다.";
 };
 setAdmin(false);
 if(ADMIN_PW)checkAdmin(ADMIN_PW).then(ok=>{if(ok)setAdmin(true);else clearAdm()});
+async function showLog(){
+  $("ll").textContent="불러오는 중…";
+  const {data,error}=await sb.rpc("admin_get_log",{pw:ADMIN_PW});
+  if(error||!data){$("ll").textContent="기록을 불러오지 못했습니다. SQL(schema_v3)을 실행했는지 확인해 주세요.";return}
+  const f=t=>new Date(t).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",hour12:false,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("ll").innerHTML=data.length?data.map(r=>`<div class="li"><span class="t">${f(r.ts)}</span><b>${esc(r.actor)}</b> · ${esc(r.action)} · <b>${esc(r.target)}</b> ${esc(r.detail||"")}</div>`).join(""):"아직 기록이 없어요.";
+}
+$("lbtn").onclick=()=>{$("ldlg").showModal();showLog()};
+$("lref").onclick=showLog;
+$("lclose").onclick=()=>$("ldlg").close();
 const fail=()=>{$("note").textContent=offlineMsg||"서버 연결 오류: Supabase 설정을 확인해 주세요."};
 async function loadGuilds(){
   const {data,error}=await sb.from("guilds").select("*");if(error||!data){fail();return}
