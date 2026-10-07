@@ -18,7 +18,9 @@ h1{font-size:20px;margin:0 0 4px}
 .tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px}
-.hd{font-weight:600;margin-bottom:8px}
+.hd{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.card.hit{border-color:#e08a00;box-shadow:0 0 0 1px #e08a00}
+#boss{margin:6px 0;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);font-size:13px;line-height:1.6}#boss b{font-variant-numeric:tabular-nums}#boss small{color:var(--mu)}
 .parties{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .party{border:1px solid var(--bd);border-radius:8px;padding:6px}
 .ph{display:flex;justify-content:space-between;align-items:center;font-weight:600;margin-bottom:4px}
@@ -62,6 +64,7 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 <h1>🍵 필보 파티모집</h1>
 <div class="sub">6층 필드보스 재료 · 재료별 1파티(최대 4명) · 매일 0시(KST) 자동 초기화 · <span id="cd"></span></div>
 <div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="lbtn" hidden>변경 기록</button><button id="mgr" hidden>닉네임 관리</button></div>
+<div id="boss">⏳ 필보 시각 정보를 기다리는 중… (모드가 자동으로 알려줘요)</div>
 <div id="note"></div>
 <div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button></div>
 <div class="grid" id="grid"></div>
@@ -206,7 +209,7 @@ function render(){
   let h="";
   for(const i of ORDER){
     const d=get(i);
-    h+=`<div class="card"><div class="hd">${hr(i)} : 00</div><div class="parties">`;
+    h+=`<div class="card${bossHit(i)?" hit":""}"><div class="hd">${hr(i)}시${bossHit(i)?` ${bossMM()}분`:""} 필보</div><div class="parties">`;
     MATS.forEach((mn,x)=>{
       const ms=d.p[x],need=SIZE-ms.length;
       h+=`<div class="party"><div class="ph"><span>${mn}</span><span class="need ${need?"":"full"}">${need?`필요 ${need}명`:"완료"}</span></div>`;
@@ -226,7 +229,7 @@ async function saveSlot(i,d){
   try{const {error}=await sb.from("board").upsert({id:k,date:day,data:JSON.stringify(d)});if(error)throw error}catch(e){$("note").textContent="저장 실패: 잠시 후 다시 시도해 주세요."}
 }
 $("wmc").innerHTML=MATS.map((m,i)=>`<label><input type="checkbox" value="${i}">${m}</label>`).join("");
-function openJoin(i,x){pending={i,x};$("wm").hidden=x>=0;document.querySelectorAll("#wmc input").forEach(c=>c.checked=false);$("dt").textContent=`${period?"오후":"오전"} ${hr(i)}:00 · ${x<0?"대기 신청":MATS[x]+" 파티 참가"}`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
+function openJoin(i,x){pending={i,x};$("wm").hidden=x>=0;document.querySelectorAll("#wmc input").forEach(c=>c.checked=false);$("dt").textContent=`${period?"오후":"오전"} ${tl(i)} · ${x<0?"대기 신청":MATS[x]+" 파티 참가"}`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
 let wpend=null;
 function openW(v){
   const [i,k]=v.split(":").map(Number),d=get(i),m=d.w[k];if(!m)return;wpend={i,k};
@@ -243,7 +246,7 @@ $("grid").onclick=e=>{
   if(wt){openJoin(+wt.dataset.wait,-1);return}
   if(wc){openW(wc.dataset.w);return}
   const a=e.target.dataset.add,r=e.target.dataset.rm;
-  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("wm").hidden=true;$("dt").textContent=`${period?"오후":"오전"} ${hr(i)}:00 · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
+  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("wm").hidden=true;$("dt").textContent=`${period?"오후":"오전"} ${tl(i)} · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";fillNames();$("dlg").showModal();$("nick").focus()}
   if(r){const [i,x,k]=r.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.p[x].splice(k,1);saveSlot(i,d)}
 };
 $("grid").onchange=e=>{
@@ -268,7 +271,32 @@ $("save").onclick=async()=>{
   $("dlg").close();saveSlot(i,d);
 };
 [0,1].forEach(p=>$("t"+p).onclick=()=>{period=p;$("t0").classList.toggle("on",!p);$("t1").classList.toggle("on",!!p);render()});
+let boss=null;
+const p2=n=>String(n).padStart(2,"0");
+const bossMM=()=>boss?p2(new Date(boss.t+9*3600e3).getUTCMinutes()):"--";
+// 현재 보고 있는 날짜/오전·오후/시 카드가 필보 시각과 일치할 때만 true
+const bossHit=i=>{if(!boss)return false;const k=new Date(boss.t+9*3600e3),H=k.getUTCHours();return k.toISOString().slice(0,10)===day&&period===(H>=12?1:0)&&i===(H%12||12)};
+const tl=i=>bossHit(i)?`${hr(i)}:${bossMM()}`:`${hr(i)}시`;
+function ago(ms){const m=Math.floor(ms/60000);return m<1?"방금 전":m<60?m+"분 전":Math.floor(m/60)+"시간 전"}
+function drawBoss(){
+  const el=$("boss");if(!boss){return}
+  const k=new Date(boss.t+9*3600e3),h=k.getUTCHours(),ap=h<12?"오전":"오후",left=Math.round((boss.t-Date.now())/1000);
+  const at=`${ap} ${p2(h%12===0&&h>=12?12:h%12)}:${p2(k.getUTCMinutes())}`;
+  const st=left>0?`다음 필보 소환까지 <b>${p2(Math.floor(left/3600))}:${p2(Math.floor(left%3600/60))}:${p2(left%60)}</b> (${at} 소환 가능)`:`<b>지금 소환 가능</b> (${at}부터)`;
+  el.innerHTML=`⏳ ${st}<br><small>${esc(boss.by)} 님 모드가 ${ago(Date.now()-boss.u)} 알려줌 · 자동 갱신</small>`;
+}
+let bossSeen=false;
+function markTabs(){
+  let hp=-1;if(boss){const k=new Date(boss.t+9*3600e3);if(k.toISOString().slice(0,10)===day)hp=k.getUTCHours()>=12?1:0}
+  $("t0").textContent="오전"+(hp===0?" ⏳":"");$("t1").textContent="오후"+(hp===1?" ⏳":"");
+  if(hp>=0&&!bossSeen){bossSeen=true;if(period!==hp)$("t"+hp).click()}
+}
+async function loadBoss(){
+  try{const {data}=await sb.from("boss_timer").select("*").eq("id",1).maybeSingle();
+    if(data&&data.ready_at){const t=Date.parse(data.ready_at),old=boss&&boss.t;boss={t,by:data.reporter||"알 수 없음",u:Date.parse(data.updated_at)};if(old!==t){markTabs();render()}}}catch(e){}
+}
 function tick(){
+  drawBoss();
   const d=kst(),left=86400-(d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds());
   $("cd").textContent=`초기화까지 ${String(Math.floor(left/3600)).padStart(2,"0")}:${String(Math.floor(left%3600/60)).padStart(2,"0")}:${String(left%60).padStart(2,"0")}`;
   if(today()!==day){day=today();slots={};render()}
@@ -366,12 +394,14 @@ async function loadBoard(){
   slots=nx;render();
   if(stale)sb.from("board").delete().neq("date",day).then(()=>{});
 }
-const loadAll=()=>{loadGuilds();loadMembers();loadBoard()};
+const loadAll=()=>{loadGuilds();loadMembers();loadBoard();loadBoss()};
+setInterval(loadBoss,15000);
 loadAll();
 sb.channel("party")
   .on("postgres_changes",{event:"*",schema:"public",table:"board"},loadBoard)
   .on("postgres_changes",{event:"*",schema:"public",table:"guilds"},loadGuilds)
   .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
+  .on("postgres_changes",{event:"*",schema:"public",table:"boss_timer"},loadBoss)
   .subscribe();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadAll()});
 </script></body></html>
