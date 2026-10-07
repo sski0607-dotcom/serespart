@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>필보 파티모집</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>🍵</text></svg>">
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--tx:#1d1d1f;--mu:#6b6b70;--bd:#e3e1dc;--ac:#3368a0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15161a;--card:#202228;--tx:#eceef2;--mu:#9a9ca6;--bd:#33353d;--ac:#7fb0e0}}
+:root[data-theme="dark"]{--bg:#15161a;--card:#202228;--tx:#eceef2;--mu:#9a9ca6;--bd:#33353d;--ac:#7fb0e0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:14px}
+main{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--mu);font-size:12px;margin-bottom:12px}
+.tabs{display:flex;gap:6px;margin:10px 0 14px}
+.tabs button{flex:1;padding:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;font-size:15px;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px}
+.hd{font-weight:600;margin-bottom:8px}
+.parties{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.party{border:1px solid var(--bd);border-radius:8px;padding:6px}
+.ph{display:flex;justify-content:space-between;align-items:center;font-weight:600;margin-bottom:4px}
+.need{font-size:11px;font-weight:400;padding:1px 7px;border-radius:99px;background:var(--bd)}
+.need.full{background:#2e9e5b;color:#fff}
+.seat{display:flex;align-items:center;gap:4px;min-height:30px;border-top:1px dashed var(--bd);padding:3px 0}
+.seat button.add{width:100%;border:0;background:none;color:var(--mu);text-align:left;cursor:pointer;padding:5px 0;font-size:13px}
+.chip{padding:2px 7px;border-radius:6px;font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.nm{flex:1;min-width:0}
+.x{border:0;background:none;color:var(--mu);cursor:pointer;font-size:16px}
+.sg{display:flex;align-items:center;gap:4px;border-top:1px solid var(--bd);margin-top:4px;padding-top:5px;font-size:11px;color:var(--mu)}
+.sg select{flex:1;padding:3px;font-size:12px;border-radius:6px}
+dialog{border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx);padding:16px;width:min(360px,92vw)}
+dialog::backdrop{background:#0006}
+label{display:block;font-size:12px;color:var(--mu);margin:10px 0 4px}
+input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px}
+.chk{display:flex;gap:6px;flex-wrap:wrap}
+.chk label{margin:0;display:flex;align-items:center;gap:4px;color:var(--tx);font-size:14px;border:1px solid var(--bd);padding:6px 10px;border-radius:8px}
+.row{display:flex;gap:8px;margin-top:14px}
+.row button{flex:1;padding:10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer;font-size:14px}
+.row .go{background:var(--ac);color:#fff;border-color:var(--ac)}
+.legend{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.lgrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.lgrow .legend{margin:0}.lg{cursor:pointer}
+#addg,#mgr{padding:4px 10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;cursor:pointer;font-size:12px}
+.cr{display:flex;gap:6px;align-items:center}.cr input[type=color]{width:42px;height:38px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+.row .del{color:#c0392b}
+.ml{max-height:45vh;overflow:auto;margin-top:8px}
+.mi{display:flex;gap:6px;align-items:center;padding:4px 0;border-top:1px dashed var(--bd)}
+.mi .nm{flex:1;min-width:0}.mi select{width:auto;padding:4px;font-size:13px}
+#mdlg{width:min(440px,94vw)}
+#note{color:#c0392b;font-size:12px}
+</style></head>
+<body><main>
+<h1>🍵 필보 파티모집</h1>
+<div class="sub">6층 필드보스 재료 · 재료별 1파티(최대 4명) · 매일 0시(KST) 자동 초기화 · <span id="cd"></span></div>
+<div class="lgrow"><div class="legend" id="legend"></div><button id="addg">+ 길드 추가 / 색 변경</button><button id="mgr">닉네임 관리</button></div>
+<div id="note"></div>
+<div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button></div>
+<div class="grid" id="grid"></div>
+<dialog id="mdlg">
+<b>닉네임 관리 <span id="mcount" class="sub"></span></b>
+<label>새 닉네임 추가</label>
+<div class="cr"><input type="text" id="mn" maxlength="40" placeholder="마크 닉네임"><select id="mg" style="width:auto"></select><button id="madd" class="go" style="padding:9px 12px;border-radius:8px;border:0;background:var(--ac);color:#fff;cursor:pointer">추가</button></div>
+<label>검색 · 길드 변경 · 삭제</label>
+<input type="text" id="mq" placeholder="닉네임 검색" autocomplete="off">
+<div class="ml" id="ml"></div>
+<div class="row"><button id="mclose">닫기</button></div>
+</dialog>
+<dialog id="gdlg">
+<b>길드 추가 / 색 변경</b>
+<label>길드 이름 (기존 길드 이름을 쓰면 색만 변경)</label><input type="text" id="gn" maxlength="12" autocomplete="off">
+<label>배경색 (HEX)</label><div class="cr"><input type="color" id="bgp"><input type="text" id="bgt" maxlength="7"></div>
+<label>글자색 (HEX)</label><div class="cr"><input type="color" id="fgp"><input type="text" id="fgt" maxlength="7"></div>
+<label>미리보기</label><div id="gpv"></div>
+<div id="gerr" style="color:#c0392b;font-size:12px;margin-top:6px"></div>
+<div class="row"><button id="gdel" class="del" hidden>삭제</button><button id="gcancel">취소</button><button class="go" id="gsave">저장</button></div>
+</dialog>
+<dialog id="dlg">
+<b id="dt"></b>
+<label>마크 닉네임</label><input type="text" id="nick" list="nl" autocomplete="off"><datalist id="nl"></datalist>
+<label>길드</label><select id="gs"></select>
+<div id="derr" style="color:#c0392b;font-size:12px;margin-top:6px"></div>
+<div class="row"><button id="cancel">취소</button><button class="go" id="save">참가</button></div>
+</dialog>
+</main>
+<script type="module">
+
+// ▼▼▼ Supabase 대시보드 > Project Settings > API 의 값으로 교체하세요 ▼▼▼
+const SUPABASE_URL = "https://duwtgajdrgsknehjqymu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_hCw5_FBl6veNENVhr-p-AQ_vM8OJaVi";
+// ▲▲▲
+let sb, offlineMsg = "";
+try {
+  if (SUPABASE_URL.includes("여기에")) throw new Error("no-config");
+  const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm");
+  sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+} catch (e) {
+  // 서버에 연결하지 못해도 화면은 정상 표시 (이 화면에서만 임시 동작)
+  offlineMsg = "서버에 연결되지 않아 이 화면에서만 임시로 동작합니다. (Supabase 설정값을 확인해 주세요)";
+  const q = { select: async () => ({ error: 1 }), upsert: async () => ({ error: 1 }), eq: async () => ({ error: 1 }), neq: async () => ({ error: 1 }) };
+  q.delete = () => q;
+  const ch = { on: () => ch, subscribe: () => ch };
+  sb = { from: () => q, channel: () => ch };
+}
+
+const GC={"티타임":["#FFFAD3","#7C2D12"],"달무리":["#DC95FF","#8C56D4"],"정예":["#66A3BF","#3368A0"],"마인천":["#D51C39","#FF6060"],"타길드":["#E2E8F0","#475569"]};
+const ROSTER=`Iwa_0 티타임
+fxrnxxne 티타임
+Saebyoek_ 티타임
+_P2DR5 티타임
+_s2_jammy 티타임
+BBuzick 티타임
+DuckbaeK 티타임
+EELLUU 티타임
+HariboJJelly 티타임
+jae_hk13 티타임
+Kelly_2 티타임
+karnios 티타임
+Mong9oose 티타임
+muonback 티타임
+salmon05_ 티타임
+ThisDays 티타임
+tt3_gu1u 티타임
+Jun_S14 티타임
+1ov3ly 달무리
+asd46578 달무리
+Nashwa07 달무리
+yxvinxx0326 달무리
+SH_0627 달무리
+_Hoy_ 정예
+chae4181 정예
+ryuhj1022 정예
+asteroid_05 정예
+berry0w 정예
+EANPATBBANG 정예
+firerune700 정예
+Focus_2 정예
+gangbee222 정예
+GWonGom 정예
+haruy_0502 정예
+lillilllillill 정예
+lrevel0 달무리
+man_duuuuuuu 정예
+MessiOf 정예
+niconico524 정예
+Sinire1204 정예
+tlswltjr 정예
+weraft 정예
+youil9535 정예
+zero9775 정예
+P_Prau 정예
+hoyunho0918 달무리
+joker5668 달무리`;
+const DEFAULTS=new Set(Object.keys(GC));
+const MATS=["암반","천공","작열","고룡"],SIZE=4;
+const guildOf={},names=[];
+ROSTER.split("\n").forEach(l=>{const [n,g]=l.trim().split(/\s+/);if(n){guildOf[n.toLowerCase()]=g;names.push(n)}});
+const $=id=>document.getElementById(id);
+const saveMember=(n,g)=>{sb.from("members").upsert({id:mid(n),n,g}).then(()=>{})};
+const baseSet=new Set(Object.keys(guildOf));
+const addName=n=>{if(!names.includes(n)){names.push(n);const o=document.createElement("option");o.value=n;$("nl").appendChild(o)}};
+const mid=n=>n.toLowerCase().replace(/[^a-z0-9_\-]/g,"_");
+const chip=(t,g)=>{const c=GC[g]||GC["타길드"];return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t}</span>`};
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const kst=()=>new Date(Date.now()+9*3600e3);
+const today=()=>kst().toISOString().slice(0,10);
+let day=today(),period=0,slots={},pending=null;
+$("nl").innerHTML=names.map(n=>`<option value="${n}">`).join("");
+function refreshGuilds(re){
+  const cur=$("gs").value;
+  $("legend").innerHTML=Object.keys(GC).map(g=>`<span class="lg" data-g="${esc(g)}">${chip(esc(g),g)}</span>`).join("");
+  $("gs").innerHTML=Object.keys(GC).map(g=>`<option value="${esc(g)}">${esc(g)}</option>`).join("");
+  $("gs").value=GC[cur]?cur:"타길드";
+  if(re)render();
+}
+refreshGuilds(false);
+const key=i=>`${day}_${period}_${i}`;
+const blank=()=>({p:[[],[],[],[]],s:["","","",""]});
+const get=i=>slots[key(i)]||blank();
+const opts=v=>`<option value="">-</option>`+Object.keys(GC).map(g=>`<option value="${esc(g)}"${g===v?" selected":""}>${esc(g)}</option>`).join("");
+function render(){
+  let h="";
+  for(let i=1;i<=12;i++){
+    const d=get(i);
+    h+=`<div class="card"><div class="hd">${String(i).padStart(2,"0")} : 00</div><div class="parties">`;
+    MATS.forEach((mn,x)=>{
+      const ms=d.p[x],need=SIZE-ms.length;
+      h+=`<div class="party"><div class="ph"><span>${mn}</span><span class="need ${need?"":"full"}">${need?`필요 ${need}명`:"완료"}</span></div>`;
+      for(let k=0;k<SIZE;k++){
+        const m=ms[k];
+        h+=m?`<div class="seat"><span class="nm">${chip(esc(m.n),m.g)}</span><button class="x" data-rm="${i}:${x}:${k}" title="삭제">×</button></div>`
+          :`<div class="seat"><button class="add" data-add="${i}:${x}">+ 참가</button></div>`;
+      }
+      h+=`<div class="sg">제출길드<select data-sg="${i}:${x}">${opts(d.s[x])}</select></div></div>`;
+    });
+    h+=`</div></div>`;
+  }
+  $("grid").innerHTML=h;
+}
+async function saveSlot(i,d){
+  const k=key(i);slots[k]=d;render();
+  try{const {error}=await sb.from("board").upsert({id:k,date:day,data:JSON.stringify(d)});if(error)throw error}catch(e){$("note").textContent="저장 실패: 잠시 후 다시 시도해 주세요."}
+}
+$("grid").onclick=e=>{
+  const a=e.target.dataset.add,r=e.target.dataset.rm;
+  if(a){const [i,x]=a.split(":").map(Number);pending={i,x};$("dt").textContent=`${period?"오후":"오전"} ${String(i).padStart(2,"0")}:00 · ${MATS[x]} 파티 참가`;$("nick").value="";$("derr").textContent="";$("gs").value="타길드";$("dlg").showModal();$("nick").focus()}
+  if(r){const [i,x,k]=r.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.p[x].splice(k,1);saveSlot(i,d)}
+};
+$("grid").onchange=e=>{
+  const v=e.target.dataset.sg;if(!v)return;
+  const [i,x]=v.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.s[x]=e.target.value;saveSlot(i,d)
+};
+$("nick").oninput=()=>{const g=guildOf[$("nick").value.trim().toLowerCase()];if(g)$("gs").value=g};
+$("cancel").onclick=()=>$("dlg").close();
+$("save").onclick=async()=>{
+  const n=$("nick").value.trim();if(!n){$("nick").focus();return}
+  try{const {data:r}=await sb.from("board").select("data").eq("id",key(pending.i)).maybeSingle();if(r&&r.data)slots[key(pending.i)]=JSON.parse(r.data)}catch(e){}
+  const {i,x}=pending,d=JSON.parse(JSON.stringify(get(i)));
+  if(d.p[x].length>=SIZE){$("derr").textContent="이 파티는 이미 가득 찼어요.";return}
+  if(d.p.some(p=>p.some(m=>m.n.toLowerCase()===n.toLowerCase()))){$("derr").textContent=`${n}님은 이 시간대에 이미 참가 중이에요. (한 시간대에 한 번만 참가할 수 있어요)`;$("nick").focus();return}
+  $("derr").textContent="";$("note").textContent="";
+  const key0=n.toLowerCase(),known=guildOf[key0];
+  const g=known||$("gs").value;
+  if(!known){guildOf[key0]=g;addName(n);saveMember(n,g)}
+  d.p[x].push({n,g});if(!d.s[x])d.s[x]=g;
+  $("dlg").close();saveSlot(i,d);
+};
+[0,1].forEach(p=>$("t"+p).onclick=()=>{period=p;$("t0").classList.toggle("on",!p);$("t1").classList.toggle("on",!!p);render()});
+function tick(){
+  const d=kst(),left=86400-(d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds());
+  $("cd").textContent=`초기화까지 ${String(Math.floor(left/3600)).padStart(2,"0")}:${String(Math.floor(left%3600/60)).padStart(2,"0")}:${String(left%60).padStart(2,"0")}`;
+  if(today()!==day){day=today();slots={};render()}
+}
+setInterval(tick,1000);tick();render();
+const TOMB="__deleted__";
+function dropName(n){const k=n.toLowerCase();for(let i=names.length-1;i>=0;i--)if(names[i].toLowerCase()===k)names.splice(i,1);[...$("nl").options].forEach(o=>{if(o.value.toLowerCase()===k)o.remove()})}
+function applyMember(v){
+  if(!v||!v.n||!v.g)return;const k=String(v.n).toLowerCase();
+  if(v.g===TOMB){delete guildOf[k];dropName(String(v.n))}else{guildOf[k]=v.g;addName(String(v.n))}
+}
+const gopts=cur=>Object.keys(GC).map(x=>`<option value="${esc(x)}"${x===cur?" selected":""}>${esc(x)}</option>`).join("");
+function drawM(){
+  const q=$("mq").value.trim().toLowerCase();
+  const arr=names.filter(n=>n.toLowerCase().includes(q)).sort((a,b)=>a.localeCompare(b));
+  $("ml").innerHTML=arr.map(n=>`<div class="mi"><span class="nm">${chip(esc(n),guildOf[n.toLowerCase()])}</span><select data-n="${esc(n)}">${gopts(guildOf[n.toLowerCase()])}</select><button class="x" data-del="${esc(n)}" title="삭제">×</button></div>`).join("")||'<div class="sub">결과 없음</div>';
+  $("mcount").textContent=`(${names.length}명)`;
+}
+$("mgr").onclick=()=>{$("mg").innerHTML=gopts("타길드");$("mq").value="";drawM();$("mdlg").showModal()};
+$("mq").oninput=drawM;
+$("mclose").onclick=()=>$("mdlg").close();
+$("ml").onchange=e=>{const n=e.target.dataset.n;if(!n)return;guildOf[n.toLowerCase()]=e.target.value;saveMember(n,e.target.value);drawM()};
+$("ml").onclick=e=>{const n=e.target.dataset.del;if(!n)return;if(!confirm(`${n} 닉네임을 삭제할까요?`))return;delete guildOf[n.toLowerCase()];dropName(n);saveMember(n,TOMB);drawM()};
+$("madd").onclick=()=>{const n=$("mn").value.trim();if(!n)return;const g=$("mg").value;guildOf[n.toLowerCase()]=g;addName(n);saveMember(n,g);$("mn").value="";drawM()};
+const gid=n=>"g_"+[...n].map(c=>c.codePointAt(0).toString(16)).join("-");
+const isHex=v=>typeof v==="string"&&/^#[0-9a-f]{6}$/i.test(v);
+const normHex=v=>{v=v.trim();if(v&&v[0]!=="#")v="#"+v;return v};
+function gpv(){const n=$("gn").value.trim()||"길드명";$("gpv").innerHTML=chip(esc(n),"__x");const c=$("gpv").firstChild;if(isHex(normHex($("bgt").value)))c.style.background=normHex($("bgt").value);if(isHex(normHex($("fgt").value)))c.style.color=normHex($("fgt").value)}
+function openG(name){
+  const c=GC[name]||["#E2E8F0","#475569"];
+  $("gn").value=name||"";$("bgt").value=c[0];$("fgt").value=c[1];$("bgp").value=c[0].toLowerCase();$("fgp").value=c[1].toLowerCase();
+  $("gerr").textContent="";$("gdel").hidden=!(name&&GC[name]&&!DEFAULTS.has(name));gpv();$("gdlg").showModal();
+}
+$("addg").onclick=()=>openG("");
+$("legend").onclick=e=>{const t=e.target.closest(".lg");if(t)openG(t.dataset.g)};
+$("gn").oninput=gpv;
+[["bgp","bgt"],["fgp","fgt"]].forEach(([p,t])=>{$(p).oninput=()=>{$(t).value=$(p).value;gpv()};$(t).oninput=()=>{const v=normHex($(t).value);if(isHex(v))$(p).value=v.toLowerCase();gpv()}});
+$("gcancel").onclick=()=>$("gdlg").close();
+$("gsave").onclick=async()=>{
+  const n=$("gn").value.trim(),bg=normHex($("bgt").value),fg=normHex($("fgt").value);
+  if(!n||n.length>12){$("gerr").textContent="길드 이름은 1~12자로 입력해 주세요.";return}
+  if(!isHex(bg)||!isHex(fg)){$("gerr").textContent="색상은 #RRGGBB 형식(예: #FFFAD3)으로 입력해 주세요.";return}
+  GC[n]=[bg,fg];refreshGuilds(true);$("gdlg").close();
+  {const {error}=await sb.from("guilds").upsert({id:gid(n),name:n,bg,fg});if(error)$("note").textContent="길드 저장 실패: 잠시 후 다시 시도해 주세요."}
+};
+$("gdel").onclick=async()=>{
+  const n=$("gn").value.trim();if(!n||DEFAULTS.has(n))return;
+  delete GC[n];refreshGuilds(true);$("gdlg").close();
+  await sb.from("guilds").delete().eq("id",gid(n));
+};
+const fail=()=>{$("note").textContent=offlineMsg||"서버 연결 오류: Supabase 설정을 확인해 주세요."};
+async function loadGuilds(){
+  const {data,error}=await sb.from("guilds").select("*");if(error||!data){fail();return}
+  const have=new Set();
+  data.forEach(v=>{if(typeof v.name==="string"&&isHex(v.bg)&&isHex(v.fg)){GC[v.name]=[v.bg,v.fg];have.add(v.name)}});
+  Object.keys(GC).forEach(g=>{if(!DEFAULTS.has(g)&&!have.has(g))delete GC[g]});
+  refreshGuilds(true);
+}
+async function loadMembers(){
+  const {data,error}=await sb.from("members").select("*");if(error||!data)return;
+  data.forEach(v=>applyMember(v));
+}
+async function loadBoard(){
+  const {data,error}=await sb.from("board").select("*");if(error||!data){fail();return}
+  const nx={};let stale=false;
+  data.forEach(r=>{if(r.date!==day){stale=true;return}try{nx[r.id]=JSON.parse(r.data)}catch(e){}});
+  slots=nx;render();
+  if(stale)sb.from("board").delete().neq("date",day).then(()=>{});
+}
+const loadAll=()=>{loadGuilds();loadMembers();loadBoard()};
+loadAll();
+sb.channel("party")
+  .on("postgres_changes",{event:"*",schema:"public",table:"board"},loadBoard)
+  .on("postgres_changes",{event:"*",schema:"public",table:"guilds"},loadGuilds)
+  .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
+  .subscribe();
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadAll()});
+</script></body></html>
