@@ -20,6 +20,24 @@ h1{font-size:20px;margin:0 0 4px}
 .card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:10px}
 .hd{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:4px}
 .card.hit{border-color:#e08a00;box-shadow:0 0 0 1px #e08a00}
+.hd span{flex:1}.hd select.chs{flex:none;width:auto;padding:3px 4px;font-size:13px;border-radius:6px}.hd select.chs.set{background:var(--ac);color:#fff;border-color:var(--ac)}
+#grid[hidden],#sug[hidden],#rec[hidden]{display:none}
+.tabs #t2{flex:0 0 auto;padding:10px 12px;font-size:12px}
+.rr{display:flex;gap:6px;margin-top:8px}.rr .rb{flex:1}
+.st h4{margin:0 0 8px;font-size:14px}.sr{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.sr .l{width:76px;flex:none}.sr em{font-style:normal;width:104px;flex:none;text-align:right;color:var(--mu);font-variant-numeric:tabular-nums}
+.bar{flex:1;height:10px;border-radius:5px;background:#c0392b33;overflow:hidden}.bar i{display:block;height:100%;background:#2e8b57}
+.big{display:flex;gap:8px;text-align:center}.big div{flex:1;padding:8px;border:1px solid var(--bd);border-radius:10px}.big b{display:block;font-size:20px}
+.hg{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}.hc{padding:6px;border:1px solid var(--bd);border-radius:8px;font-size:12px;text-align:center}.hc b{display:block;font-size:14px}
+#rec .card{margin-bottom:12px}.recnav{display:flex;align-items:center;gap:8px}.recnav b{flex:1;text-align:center}
+.recnav button{padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer}.recnav button:disabled{opacity:.4;cursor:default}
+.ri{display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);margin-bottom:6px}
+.ri.now{border-color:#e08a00}.ri .rh{width:84px;font-weight:600}.ri .rc{flex:1;color:var(--mu);font-size:12px}
+.rb{padding:7px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer;font-size:13px}.rb:disabled{opacity:.35;cursor:default}
+.rb.ok.on{background:#2e8b57;border-color:#2e8b57;color:#fff}.rb.no.on{background:#c0392b;border-color:#c0392b;color:#fff}
+#sug .card{margin-bottom:12px}#sug textarea{width:100%;padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font-size:15px;font-family:inherit;resize:vertical;margin-top:8px}
+#sug input[type=text]{margin-top:8px}.sgrow{display:flex;align-items:center;gap:8px;margin-top:8px}.sgrow .sub{flex:1;margin:0}
+.sgrow button{padding:9px 18px;border-radius:8px;border:1px solid var(--ac);background:var(--ac);color:#fff;cursor:pointer;font-size:14px}.sgrow button:disabled{opacity:.5}
+.si{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);margin-bottom:8px}.si .t{color:var(--mu);font-size:12px}.si p{margin:6px 0 0;white-space:pre-wrap;word-break:break-word}.si button{float:right;border:0;background:none;color:#c0392b;cursor:pointer;font-size:16px}
 #boss{margin:6px 0;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;background:var(--card);font-size:13px;line-height:1.6}#boss b{font-variant-numeric:tabular-nums}#boss small{color:var(--mu)}
 .parties{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .party{border:1px solid var(--bd);border-radius:8px;padding:6px}
@@ -66,8 +84,25 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 <div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="lbtn" hidden>변경 기록</button><button id="mgr" hidden>닉네임 관리</button></div>
 <div id="boss">⏳ 필보 시각 정보를 기다리는 중… (모드가 자동으로 알려줘요)</div>
 <div id="note"></div>
-<div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button></div>
+<div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button><button id="t3">통계</button><button id="t2">건의사항</button></div>
 <div class="grid" id="grid"></div>
+<div id="rec" class="st" hidden>
+  <div class="card" id="st1"></div>
+  <div class="card" id="st2"></div>
+  <div class="card" id="st3"></div>
+  <div class="card" id="st4"></div>
+</div>
+<div id="sug" hidden>
+  <div class="card">
+    <b>건의사항</b>
+    <div class="sub" style="margin:4px 0 0">사이트나 모드에 바라는 점을 남겨 주세요. 등록한 내용은 모두가 볼 수 있어요.</div>
+    <input type="text" id="sn" maxlength="20" placeholder="닉네임 (선택)" autocomplete="off">
+    <textarea id="sb" maxlength="500" rows="3" placeholder="건의 내용 (최대 500자)"></textarea>
+    <div class="sgrow"><span class="sub" id="sc">0/500</span><button id="sgo">등록</button></div>
+    <div id="serr" style="color:#c0392b;font-size:12px;margin-top:6px"></div>
+  </div>
+  <div id="sl"></div>
+</div>
 <dialog id="ldlg">
 <b>변경 기록 (최근 200건)</b>
 <div id="ll"></div>
@@ -202,14 +237,15 @@ refreshGuilds(false);fillNames();
 const key=i=>`${day}_${period}_${i}`;
 const hr=i=>String(period?i:i%12).padStart(2,"0"); // 오전 00~11, 오후 12~11
 const ORDER=[12,1,2,3,4,5,6,7,8,9,10,11];
-const blank=()=>({p:[[],[],[],[]],s:["","","",""],w:[]});
+const blank=()=>({p:[[],[],[],[]],s:["","","",""],w:[],c:0});
+const chOpts=v=>`<option value="0">채널 선택</option>`+Array.from({length:11},(_,n)=>`<option value="${n+1}"${v===n+1?" selected":""}>${n+1}채널</option>`).join("");
 const get=i=>{const d=slots[key(i)]||blank();d.w=d.w||[];return d};
 const opts=v=>`<option value="">-</option>`+Object.keys(GC).map(g=>`<option value="${esc(g)}"${g===v?" selected":""}>${esc(g)}</option>`).join("");
 function render(){
   let h="";
   for(const i of ORDER){
     const d=get(i);
-    h+=`<div class="card${bossHit(i)?" hit":""}"><div class="hd">${hr(i)}시${bossHit(i)?` ${bossMM()}분`:""} 필보</div><div class="parties">`;
+    h+=`<div class="card${bossHit(i)?" hit":""}"><div class="hd"><span>${hr(i)}시${bossHit(i)?` ${bossMM()}분`:""} 필보</span><select class="chs${d.c?" set":""}" data-ch="${i}" title="보스를 잡는 채널">${chOpts(d.c||0)}</select></div><div class="parties">`;
     MATS.forEach((mn,x)=>{
       const ms=d.p[x],need=SIZE-ms.length;
       h+=`<div class="party"><div class="ph"><span>${mn}</span><span class="need ${need?"":"full"}">${need?`필요 ${need}명`:"완료"}</span></div>`;
@@ -220,7 +256,7 @@ function render(){
       }
       h+=`<div class="sg">제출길드<select data-sg="${i}:${x}">${opts(d.s[x])}</select></div></div>`;
     });
-    h+=`</div><div class="wl"><span>대기 ${d.w.length}</span>`+d.w.map((m,k)=>`<button class="wchip" data-w="${i}:${k}">${chip(esc(m.n),m.g)}<small>${m.m.length?m.m.map(x=>MATS[x]).join("·"):"아무거나"}</small></button>`).join("")+`<button class="wadd" data-wait="${i}">+ 대기</button></div></div>`;
+    h+=`</div><div class="wl"><span>대기 ${d.w.length}</span>`+d.w.map((m,k)=>`<button class="wchip" data-w="${i}:${k}">${chip(esc(m.n),m.g)}<small>${m.m.length?m.m.map(x=>MATS[x]).join("·"):"아무거나"}</small></button>`).join("")+`<button class="wadd" data-wait="${i}">+ 대기</button></div>${resRow(i,d)}</div>`;
   }
   $("grid").innerHTML=h;
 }
@@ -242,6 +278,7 @@ $("wclose").onclick=()=>$("wdlg").close();
 $("wcancel").onclick=()=>{const {i,k}=wpend,d=JSON.parse(JSON.stringify(get(i)));d.w.splice(k,1);$("wdlg").close();saveSlot(i,d)};
 $("wgo").onclick=()=>{const {i,k}=wpend,x=+$("wsel").value,d=JSON.parse(JSON.stringify(get(i))),m=d.w[k];if(!m||d.p[x].length>=SIZE)return;d.w.splice(k,1);d.p[x].push({n:m.n,g:m.g});if(!d.s[x])d.s[x]=m.g;$("wdlg").close();saveSlot(i,d)};
 $("grid").onclick=e=>{
+  const rs=e.target.dataset.res;if(rs){if(!e.target.disabled)markResult(rs);return}
   const wt=e.target.closest("[data-wait]"),wc=e.target.closest("[data-w]");
   if(wt){openJoin(+wt.dataset.wait,-1);return}
   if(wc){openW(wc.dataset.w);return}
@@ -250,6 +287,8 @@ $("grid").onclick=e=>{
   if(r){const [i,x,k]=r.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.p[x].splice(k,1);saveSlot(i,d)}
 };
 $("grid").onchange=e=>{
+  const ch=e.target.dataset.ch;
+  if(ch){const i=+ch,d=JSON.parse(JSON.stringify(get(i)));d.c=+e.target.value||0;saveSlot(i,d);return}
   const v=e.target.dataset.sg;if(!v)return;
   const [i,x]=v.split(":").map(Number);const d=JSON.parse(JSON.stringify(get(i)));d.s[x]=e.target.value;saveSlot(i,d)
 };
@@ -270,7 +309,71 @@ $("save").onclick=async()=>{
   if(x<0){d.w.push({n,g,m:[...document.querySelectorAll("#wmc input:checked")].map(c=>+c.value)})}else{d.p[x].push({n,g});if(!d.s[x])d.s[x]=g}
   $("dlg").close();saveSlot(i,d);
 };
-[0,1].forEach(p=>$("t"+p).onclick=()=>{period=p;$("t0").classList.toggle("on",!p);$("t1").classList.toggle("on",!!p);render()});
+function showTab(v){ // v: 0 오전, 1 오후, 2 건의사항, 3 기록
+  if(v<2)period=v;
+  [0,1,2,3].forEach(x=>$("t"+x).classList.toggle("on",x===v));
+  $("grid").hidden=v>=2;$("sug").hidden=v!==2;$("rec").hidden=v!==3;
+  if(v===2)loadSug();else if(v===3)loadStats();else render();
+}
+[0,1,2,3].forEach(p=>$("t"+p).onclick=()=>showTab(p));
+// ───── 필보 결과 (잡음 / 못 잡음) · 통계 ─────
+let recData={};
+const cardH=i=>period?(i%12)+12:i%12;                       // 카드의 실제 시각(0~23)
+const resRow=(i,d)=>{
+  const H=cardH(i),r=recData[day+"_"+H],off=H>kst().getUTCHours()||day!==today();
+  return `<div class="rr"><button class="rb ok${r&&r.result==="caught"?" on":""}" data-res="${i}:caught"${off?" disabled":""}>잡음</button><button class="rb no${r&&r.result==="missed"?" on":""}" data-res="${i}:missed"${off?" disabled":""}>못 잡음</button></div>`;
+};
+async function loadToday(){
+  try{const {data,error}=await sb.from("boss_log").select("day,hour,result,channel").eq("day",today());
+    if(error||!data)return;recData={};data.forEach(r=>{recData[r.day+"_"+r.hour]=r});render()}catch(e){}
+}
+async function markResult(v){
+  const [is,res]=v.split(":"),i=+is,H=cardH(i),k=day+"_"+H,cur=recData[k]&&recData[k].result,next=cur===res?"":res,ch=get(i).c||0;
+  if(next)recData[k]={day,hour:H,result:next,channel:ch||(recData[k]&&recData[k].channel)||null};else delete recData[k];
+  render();
+  try{const {error}=await sb.rpc("set_boss_result",{p_day:day,p_hour:H,p_result:next,p_channel:ch||null});if(error)throw error}
+  catch(err){$("note").textContent="기록 저장 실패: 잠시 후 다시 시도해 주세요. (schema_v6.sql 실행 여부 확인)";loadToday()}
+}
+const pct=(c,m)=>c+m?Math.round(c*100/(c+m))+"%":"-";
+const bar=(c,m)=>`<div class="bar"><i style="width:${c+m?c*100/(c+m):0}%"></i></div>`;
+async function loadStats(){
+  let st;
+  try{const {data,error}=await sb.rpc("get_boss_stats");if(error||!data)throw error||1;st=data}
+  catch(e){$("st1").innerHTML='<div class="sub" style="margin:0">통계를 불러오지 못했어요. (schema_v7.sql 실행 여부를 확인해 주세요)</div>';["st2","st3","st4"].forEach(x=>$(x).innerHTML="");return}
+  const t=st.total||{caught:0,missed:0,days:0};
+  let tc=0,tm=0;Object.values(recData).forEach(r=>{r.result==="caught"?tc++:tm++});
+  $("st1").innerHTML=`<h4>전체 통계 <span class="sub" style="margin:0">(날짜가 바뀌어도 초기화되지 않아요)</span></h4>
+    <div class="big"><div><b>${t.caught}</b>잡음</div><div><b>${t.missed}</b>못 잡음</div><div><b>${pct(t.caught,t.missed)}</b>성공률</div></div>
+    <div class="sub" style="margin:8px 0 0">기록 ${t.days}일 · 총 ${t.caught+t.missed}회 · 오늘 잡음 ${tc} / 못 잡음 ${tm}</div>`;
+  const f=d=>d.slice(5).replace("-","/");
+  $("st2").innerHTML=`<h4>최근 14일</h4>`+((st.days||[]).length?st.days.map(d=>`<div class="sr"><span class="l">${f(d.day)}</span>${bar(d.caught,d.missed)}<em>${d.caught}/${d.caught+d.missed} (${pct(d.caught,d.missed)})</em></div>`).join(""):'<div class="sub">아직 기록이 없어요.</div>');
+  $("st3").innerHTML=`<h4>채널별</h4>`+((st.channels||[]).length?st.channels.map(c=>`<div class="sr"><span class="l">${c.channel}채널</span>${bar(c.caught,c.missed)}<em>${c.caught}/${c.caught+c.missed} (${pct(c.caught,c.missed)})</em></div>`).join(""):'<div class="sub">채널을 고르고 기록하면 여기에 나와요.</div>');
+  $("st4").innerHTML=`<h4>시간대별 성공률</h4>`+((st.hours||[]).length?`<div class="hg">`+st.hours.map(h=>`<div class="hc">${h.hour<12?"오전":"오후"} ${p2(h.hour%12===0&&h.hour>=12?12:h.hour%12)}시<b>${pct(h.caught,h.missed)}</b>${h.caught}/${h.caught+h.missed}</div>`).join("")+`</div>`:'<div class="sub">아직 기록이 없어요.</div>');
+}
+let sugData=[];
+function drawSug(){
+  const f=t=>new Date(t).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",hour12:false,month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+  $("sl").innerHTML=sugData.length?sugData.map(r=>`<div class="si">${ADMIN_PW?`<button data-sd="${r.id}" title="삭제">×</button>`:""}<span class="t">${f(r.ts)} · <b>${esc(r.nick||"익명")}</b></span><p>${esc(r.body)}</p></div>`).join(""):'<div class="sub">아직 등록된 건의사항이 없어요.</div>';
+}
+async function loadSug(){
+  try{const {data,error}=await sb.from("suggestions").select("id,ts,nick,body").order("id",{ascending:false}).limit(100);
+    if(error||!data){$("sl").innerHTML='<div class="sub">건의사항을 불러오지 못했어요. (schema_v5.sql 실행 여부를 확인해 주세요)</div>';return}
+    sugData=data;drawSug()}catch(e){$("sl").innerHTML='<div class="sub">건의사항을 불러오지 못했어요.</div>'}
+}
+$("sb").oninput=()=>{$("sc").textContent=`${$("sb").value.length}/500`};
+$("sgo").onclick=async()=>{
+  const body=$("sb").value.trim(),nick=$("sn").value.trim();
+  if(!body){$("serr").textContent="내용을 입력해 주세요.";return}
+  $("sgo").disabled=true;$("serr").textContent="";
+  try{const {error}=await sb.rpc("add_suggestion",{p_nick:nick,p_body:body});
+    if(error)throw error;$("sb").value="";$("sc").textContent="0/500";await loadSug()}
+  catch(e){$("serr").textContent="등록하지 못했어요. 잠시 후 다시 시도해 주세요."}
+  setTimeout(()=>{$("sgo").disabled=false},3000);
+};
+$("sl").onclick=async e=>{
+  const id=e.target.dataset.sd;if(!id||!ADMIN_PW||!confirm("이 건의사항을 삭제할까요?"))return;
+  await sb.rpc("admin_delete_suggestion",{pw:ADMIN_PW,p_id:+id});loadSug();
+};
 let boss=null;
 const p2=n=>String(n).padStart(2,"0");
 const bossMM=()=>boss?p2(new Date(boss.t+9*3600e3).getUTCMinutes()):"--";
@@ -289,7 +392,7 @@ let bossSeen=false;
 function markTabs(){
   let hp=-1;if(boss){const k=new Date(boss.t+9*3600e3);if(k.toISOString().slice(0,10)===day)hp=k.getUTCHours()>=12?1:0}
   $("t0").textContent="오전"+(hp===0?" ⏳":"");$("t1").textContent="오후"+(hp===1?" ⏳":"");
-  if(hp>=0&&!bossSeen){bossSeen=true;if(period!==hp)$("t"+hp).click()}
+  if(hp>=0&&!bossSeen){bossSeen=true;if(period!==hp&&!$("grid").hidden)showTab(hp)}
 }
 async function loadBoss(){
   try{const {data}=await sb.from("boss_timer").select("*").eq("id",1).maybeSingle();
@@ -299,7 +402,7 @@ function tick(){
   drawBoss();
   const d=kst(),left=86400-(d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds());
   $("cd").textContent=`초기화까지 ${String(Math.floor(left/3600)).padStart(2,"0")}:${String(Math.floor(left%3600/60)).padStart(2,"0")}:${String(left%60).padStart(2,"0")}`;
-  if(today()!==day){day=today();slots={};render()}
+  if(today()!==day){day=today();slots={};recData={};render();loadToday()}
 }
 setInterval(tick,1000);tick();render();
 const TOMB="__deleted__";
@@ -351,7 +454,7 @@ let ADMIN_PW="",ADMIN_NAME="";
 try{ADMIN_NAME=localStorage.getItem("admn")||""}catch(e){}
 try{ADMIN_PW=localStorage.getItem("adm")||""}catch(e){}
 const clearAdm=()=>{ADMIN_PW="";try{localStorage.removeItem("adm")}catch(e){}};
-function setAdmin(on){$("addg").hidden=$("mgr").hidden=$("lbtn").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자"}
+function setAdmin(on){$("addg").hidden=$("mgr").hidden=$("lbtn").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자";drawSug()}
 async function checkAdmin(pw){try{const {data,error}=await sb.rpc("admin_check",{pw});return !error&&data===true}catch(e){return false}}
 $("adm").onclick=async()=>{
   if(ADMIN_PW){clearAdm();setAdmin(false);return}
@@ -394,7 +497,7 @@ async function loadBoard(){
   slots=nx;render();
   if(stale)sb.from("board").delete().neq("date",day).then(()=>{});
 }
-const loadAll=()=>{loadGuilds();loadMembers();loadBoard();loadBoss()};
+const loadAll=()=>{loadGuilds();loadMembers();loadBoard();loadBoss();loadToday()};
 setInterval(loadBoss,15000);
 loadAll();
 sb.channel("party")
@@ -402,6 +505,8 @@ sb.channel("party")
   .on("postgres_changes",{event:"*",schema:"public",table:"guilds"},loadGuilds)
   .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
   .on("postgres_changes",{event:"*",schema:"public",table:"boss_timer"},loadBoss)
+  .on("postgres_changes",{event:"*",schema:"public",table:"boss_log"},()=>{loadToday();if(!$("rec").hidden)loadStats()})
+  .on("postgres_changes",{event:"*",schema:"public",table:"suggestions"},()=>{if(!$("sug").hidden)loadSug()})
   .subscribe();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadAll()});
 </script></body></html>
