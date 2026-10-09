@@ -245,7 +245,7 @@ function render(){
   let h="";
   for(const i of ORDER){
     const d=get(i);
-    h+=`<div class="card${bossHit(i)?" hit":""}"><div class="hd"><span>${hr(i)}시${bossHit(i)?` ${bossMM()}분`:""} 필보</span><select class="chs${d.c?" set":""}" data-ch="${i}" title="보스를 잡는 채널">${chOpts(d.c||0)}</select></div><div class="parties">`;
+    h+=`<div class="card${bossHit(i)?" hit":""}"><div class="hd"><span>${hr(i)}시${bossHit(i)?(boss.t<=Date.now()?" 지금 봉헌 가능 🟢":` ${bossMM()}분`):""} 필보</span><select class="chs${d.c?" set":""}" data-ch="${i}" title="보스를 잡는 채널">${chOpts(d.c||0)}</select></div><div class="parties">`;
     MATS.forEach((mn,x)=>{
       const ms=d.p[x],need=SIZE-ms.length;
       h+=`<div class="party"><div class="ph"><span>${mn}</span><span class="need ${need?"":"full"}">${need?`필요 ${need}명`:"완료"}</span></div>`;
@@ -385,7 +385,7 @@ function drawBoss(){
   const el=$("boss");if(!boss){return}
   const k=new Date(boss.t+9*3600e3),h=k.getUTCHours(),ap=h<12?"오전":"오후",left=Math.round((boss.t-Date.now())/1000);
   const at=`${ap} ${p2(h%12===0&&h>=12?12:h%12)}:${p2(k.getUTCMinutes())}`;
-  const st=left>0?`다음 필보 소환까지 <b>${p2(Math.floor(left/3600))}:${p2(Math.floor(left%3600/60))}:${p2(left%60)}</b> (${at} 소환 가능)`:`<b>지금 소환 가능</b> (${at}부터)`;
+  const st=left>0?`다음 필보 소환까지 <b>${p2(Math.floor(left/3600))}:${p2(Math.floor(left%3600/60))}:${p2(left%60)}</b> (${at} 소환 가능)`:`🟢 <b>지금 봉헌 가능</b> (${at} 확인)`;
   el.innerHTML=`⏳ ${st}<br><small>${esc(boss.by)} 님 모드가 ${ago(Date.now()-boss.u)} 알려줌 · 자동 갱신</small>`;
 }
 let bossSeen=false;
@@ -398,8 +398,10 @@ async function loadBoss(){
   try{const {data}=await sb.from("boss_timer").select("*").eq("id",1).maybeSingle();
     if(data&&data.ready_at){const t=Date.parse(data.ready_at),old=boss&&boss.t;boss={t,by:data.reporter||"알 수 없음",u:Date.parse(data.updated_at)};if(old!==t){markTabs();render()}}}catch(e){}
 }
+let lastAv=null;
 function tick(){
   drawBoss();
+  {const av=!!boss&&boss.t<=Date.now();if(av!==lastAv){lastAv=av;render()}}
   const d=kst(),left=86400-(d.getUTCHours()*3600+d.getUTCMinutes()*60+d.getUTCSeconds());
   $("cd").textContent=`초기화까지 ${String(Math.floor(left/3600)).padStart(2,"0")}:${String(Math.floor(left%3600/60)).padStart(2,"0")}:${String(left%60).padStart(2,"0")}`;
   if(today()!==day){day=today();slots={};recData={};render();loadToday()}
