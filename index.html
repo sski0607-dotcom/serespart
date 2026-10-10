@@ -22,6 +22,13 @@ h1{font-size:20px;margin:0 0 4px}
 .card.hit{border-color:#e08a00;box-shadow:0 0 0 1px #e08a00}
 .hd span{flex:1}.hd select.chs{flex:none;width:auto;padding:3px 4px;font-size:13px;border-radius:6px}.hd select.chs.set{background:var(--ac);color:#fff;border-color:var(--ac)}
 #grid[hidden],#sug[hidden],#rec[hidden]{display:none}
+#gate{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}#gate[hidden]{display:none}
+#gate .gb{max-width:380px;width:100%;text-align:center}#gate h1{font-size:22px;margin:0 0 8px}#gate p{color:var(--mu);line-height:1.6;margin:8px 0 16px}
+#gate button{display:block;width:100%;padding:12px;margin-top:8px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:15px;cursor:pointer}
+#gate button.dc{background:#5865F2;border-color:#5865F2;color:#fff;font-weight:600}
+#acdlg{width:min(480px,94vw)}#acl{max-height:60vh;overflow:auto;margin-top:8px}#acl h5{margin:12px 0 6px;font-size:13px}
+.ai{display:flex;align-items:center;gap:6px;padding:7px 0;border-top:1px dashed var(--bd)}.ai .nm{flex:1;min-width:0;word-break:break-all}.ai small{color:var(--mu);display:block}
+.ai button{padding:5px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px}.ai button.ok{background:var(--ac);color:#fff;border-color:var(--ac)}.ai button.no{color:#c0392b}
 .tabs #t2{flex:0 0 auto;padding:10px 12px;font-size:12px}
 .rr{display:flex;gap:6px;margin-top:8px}.rr .rb{flex:1}
 .st h4{margin:0 0 8px;font-size:14px}.sr{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.sr .l{width:76px;flex:none}.sr em{font-style:normal;width:104px;flex:none;text-align:right;color:var(--mu);font-variant-numeric:tabular-nums}
@@ -81,7 +88,7 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 <body><main>
 <h1>🍵 필보 파티모집</h1>
 <div class="sub">6층 필드보스 재료 · 재료별 1파티(최대 4명) · 매일 0시(KST) 자동 초기화 · <span id="cd"></span></div>
-<div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="lbtn" hidden>변경 기록</button><button id="mgr" hidden>닉네임 관리</button></div>
+<div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="lbtn" hidden>변경 기록</button><button id="mgr" hidden>닉네임 관리</button><button id="acb" hidden>접근 관리</button><button id="lo" hidden>로그아웃</button></div>
 <div id="boss">⏳ 필보 시각 정보를 기다리는 중… (모드가 자동으로 알려줘요)</div>
 <div id="note"></div>
 <div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button><button id="t3">통계</button><button id="t2">건의사항</button></div>
@@ -140,6 +147,13 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 <div class="row"><button id="cancel">취소</button><button class="go" id="save">참가</button></div>
 </dialog>
 </main>
+<div id="gate"><div class="gb"><h1>🍵 필보 파티모집</h1><p>불러오는 중…</p></div></div>
+<dialog id="acdlg">
+<b>접근 관리</b>
+<div class="sub" id="acsub" style="margin:4px 0 0">디스코드로 로그인한 사람이 여기에 나타나요. 길드원이면 승인하세요.</div>
+<div id="acl"></div>
+<div class="row"><button id="acref">새로고침</button><button id="acclose" class="go">닫기</button></div>
+</dialog>
 <script type="module">
 
 // ▼▼▼ Supabase 대시보드 > Project Settings > API 의 값으로 교체하세요 ▼▼▼
@@ -456,7 +470,7 @@ let ADMIN_PW="",ADMIN_NAME="";
 try{ADMIN_NAME=localStorage.getItem("admn")||""}catch(e){}
 try{ADMIN_PW=localStorage.getItem("adm")||""}catch(e){}
 const clearAdm=()=>{ADMIN_PW="";try{localStorage.removeItem("adm")}catch(e){}};
-function setAdmin(on){$("addg").hidden=$("mgr").hidden=$("lbtn").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자";drawSug()}
+function setAdmin(on){$("addg").hidden=$("mgr").hidden=$("lbtn").hidden=$("acb").hidden=!on;$("adm").textContent=on?"🔓 관리자 모드 끄기":"🔑 관리자";drawSug()}
 async function checkAdmin(pw){try{const {data,error}=await sb.rpc("admin_check",{pw});return !error&&data===true}catch(e){return false}}
 $("adm").onclick=async()=>{
   if(ADMIN_PW){clearAdm();setAdmin(false);return}
@@ -469,7 +483,7 @@ $("adm").onclick=async()=>{
   else $("note").textContent="비밀번호가 맞지 않습니다.";
 };
 setAdmin(false);
-if(ADMIN_PW)checkAdmin(ADMIN_PW).then(ok=>{if(ok)setAdmin(true);else clearAdm()});
+const restoreAdmin=()=>{if(ADMIN_PW)checkAdmin(ADMIN_PW).then(ok=>{if(ok)setAdmin(true);else clearAdm()})};
 async function showLog(){
   $("ll").textContent="불러오는 중…";
   const {data,error}=await sb.rpc("admin_get_log",{pw:ADMIN_PW});
@@ -500,15 +514,82 @@ async function loadBoard(){
   if(stale)sb.from("board").delete().neq("date",day).then(()=>{});
 }
 const loadAll=()=>{loadGuilds();loadMembers();loadBoard();loadBoss();loadToday()};
-setInterval(loadBoss,15000);
-loadAll();
-sb.channel("party")
-  .on("postgres_changes",{event:"*",schema:"public",table:"board"},loadBoard)
-  .on("postgres_changes",{event:"*",schema:"public",table:"guilds"},loadGuilds)
-  .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
-  .on("postgres_changes",{event:"*",schema:"public",table:"boss_timer"},loadBoss)
-  .on("postgres_changes",{event:"*",schema:"public",table:"boss_log"},()=>{loadToday();if(!$("rec").hidden)loadStats()})
-  .on("postgres_changes",{event:"*",schema:"public",table:"suggestions"},()=>{if(!$("sug").hidden)loadSug()})
-  .subscribe();
-document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadAll()});
+let started=false;
+function startApp(){
+  if(started)return;started=true;
+  loadAll();restoreAdmin();
+  setInterval(loadBoss,15000);
+  sb.channel("party")
+    .on("postgres_changes",{event:"*",schema:"public",table:"board"},loadBoard)
+    .on("postgres_changes",{event:"*",schema:"public",table:"guilds"},loadGuilds)
+    .on("postgres_changes",{event:"*",schema:"public",table:"members"},loadMembers)
+    .on("postgres_changes",{event:"*",schema:"public",table:"boss_timer"},loadBoss)
+    .on("postgres_changes",{event:"*",schema:"public",table:"boss_log"},()=>{loadToday();if(!$("rec").hidden)loadStats()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"suggestions"},()=>{if(!$("sug").hidden)loadSug()})
+    .subscribe();
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadAll()});
+}
+// ───── 디스코드 로그인 + 승인 명단 ─────
+const gateBox=h=>{$("gate").hidden=false;$("gate").innerHTML=`<div class="gb"><h1>🍵 필보 파티모집</h1>${h}</div>`};
+const logout=async()=>{try{await sb.auth.signOut()}catch(e){}location.reload()};
+async function discordLogin(){
+  const {error}=await sb.auth.signInWithOAuth({provider:"discord",options:{redirectTo:location.origin+location.pathname}});
+  if(error)alert("로그인을 시작하지 못했어요: "+error.message);
+}
+function showLogin(msg){
+  gateBox(`<p>${msg||"길드원 전용 페이지예요.<br>디스코드로 로그인하면 승인 후 이용할 수 있어요."}</p><button class="dc" id="gdc">디스코드로 로그인</button>`);
+  $("gdc").onclick=discordLogin;
+}
+function showWaiting(name){
+  gateBox(`<p><b>${esc(name||"")}</b> 님, 로그인되었어요.<br>관리자가 승인하면 바로 사용할 수 있어요. 승인 요청은 이미 전달됐어요.</p>
+    <button id="gchk" class="dc">승인됐는지 확인</button><button id="gadm">🔑 관리자 (직접 승인)</button><button id="glo">다른 계정으로 로그인</button>`);
+  $("gchk").onclick=gateCheck;$("glo").onclick=logout;
+  $("gadm").onclick=async()=>{if(await ensureAdmin()){await openAccess()}};
+}
+async function gateCheck(){
+  let session=null;
+  try{({data:{session}}=await sb.auth.getSession())}catch(e){}
+  if(!session){$("lo").hidden=true;showLogin();return}
+  $("lo").hidden=false;
+  const {data:ok,error}=await sb.rpc("is_allowed");
+  if(error){gateBox(`<p>서버 확인에 실패했어요.<br>(schema_v8.sql 실행 여부를 확인해 주세요)</p><button id="gretry" class="dc">다시 시도</button><button id="glo">로그아웃</button>`);$("gretry").onclick=gateCheck;$("glo").onclick=logout;return}
+  if(ok){$("gate").hidden=true;startApp();return}
+  const md=session.user&&session.user.user_metadata||{};
+  try{await sb.rpc("request_access")}catch(e){}
+  showWaiting(md.custom_claims&&md.custom_claims.global_name||md.full_name||md.name);
+}
+async function ensureAdmin(){
+  if(ADMIN_PW)return true;
+  const pw=prompt("관리자 비밀번호를 입력하세요");if(!pw)return false;
+  if(!(await checkAdmin(pw))){alert("비밀번호가 맞지 않습니다.");return false}
+  ADMIN_PW=pw;try{localStorage.setItem("adm",pw)}catch(e){}
+  if(!ADMIN_NAME)ADMIN_NAME="관리자";
+  return true;
+}
+async function drawAccess(){
+  $("acl").textContent="불러오는 중…";
+  const {data,error}=await sb.rpc("admin_list_access",{pw:ADMIN_PW});
+  if(error||!data){$("acl").textContent="불러오지 못했어요. (schema_v8.sql 실행 여부와 관리자 비밀번호를 확인해 주세요)";return}
+  const row=(r,btns)=>`<div class="ai"><span class="nm">${esc(r.name||"이름 없음")}<small>${esc(r.discord_id)}</small></span>${btns}</div>`;
+  $("acl").innerHTML=`<h5>승인 대기 (${data.requests.length})</h5>`+(data.requests.length?data.requests.map(r=>row(r,`<button class="ok" data-ap="${esc(r.discord_id)}">승인</button><button class="no" data-rj="${esc(r.discord_id)}">거절</button>`)).join(""):'<div class="sub">대기 중인 요청이 없어요.</div>')
+    +`<h5>승인됨 (${data.allowed.length})</h5>`+(data.allowed.length?data.allowed.map(r=>row(r,`<button class="no" data-rm="${esc(r.discord_id)}">제거</button>`)).join(""):'<div class="sub">아직 없어요.</div>');
+}
+async function openAccess(){$("acdlg").showModal();await drawAccess()}
+$("acb").onclick=openAccess;
+$("acref").onclick=drawAccess;
+$("acclose").onclick=()=>{$("acdlg").close();if(!$("gate").hidden)gateCheck()};
+$("acl").onclick=async e=>{
+  const t=e.target,ap=t.dataset.ap,rj=t.dataset.rj,rm=t.dataset.rm;
+  if(!ap&&!rj&&!rm)return;
+  if(rm&&!confirm("이 사람의 접근을 제거할까요?"))return;
+  const fn=ap?"admin_approve_access":rj?"admin_reject_access":"admin_remove_access";
+  const {error}=await sb.rpc(fn,{pw:ADMIN_PW,p_id:ap||rj||rm,p_actor:ADMIN_NAME||"관리자"});
+  if(error)alert("처리하지 못했어요.");
+  drawAccess();
+};
+$("lo").onclick=logout;
+if(sb.auth){
+  sb.auth.onAuthStateChange(ev=>{if(ev==="SIGNED_OUT")location.reload()});
+  gateCheck();
+}else{$("gate").hidden=true;startApp()}
 </script></body></html>
