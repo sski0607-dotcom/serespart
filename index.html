@@ -21,7 +21,10 @@ h1{font-size:20px;margin:0 0 4px}
 .hd{font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:4px}
 .card.hit{border-color:#e08a00;box-shadow:0 0 0 1px #e08a00}
 .hd span{flex:1}.hd select.chs{flex:none;width:auto;padding:3px 4px;font-size:13px;border-radius:6px}.hd select.chs.set{background:var(--ac);color:#fff;border-color:var(--ac)}
-#grid[hidden],#sug[hidden],#rec[hidden]{display:none}
+#grid[hidden],#sug[hidden],#rec[hidden],#his[hidden]{display:none}
+#his .card{margin-bottom:12px}#his input[type=text]{margin-top:8px}.hs{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--card);margin-bottom:8px}
+.hs .hh{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.hs .hh b{font-size:14px}.hs .hr{display:flex;gap:6px;align-items:baseline;margin:3px 0;flex-wrap:wrap}.hs .hr>span:first-child{width:36px;flex:none;color:var(--mu);font-size:12px}
+.tg{font-size:11px;padding:2px 7px;border-radius:999px;border:1px solid var(--bd);color:var(--mu)}.tg.ok{background:#2e8b5722;color:#2e8b57;border-color:#2e8b57}.tg.no{background:#c0392b22;color:#c0392b;border-color:#c0392b}
 #gate{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}#gate[hidden]{display:none}
 #gate .gb{max-width:380px;width:100%;text-align:center}#gate h1{font-size:22px;margin:0 0 8px}#gate p{color:var(--mu);line-height:1.6;margin:8px 0 16px}
 #gate button{display:block;width:100%;padding:12px;margin-top:8px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:15px;cursor:pointer}
@@ -91,13 +94,21 @@ input[type=text],select{width:100%;padding:9px;border:1px solid var(--bd);border
 <div class="lgrow"><div class="legend" id="legend"></div><button id="adm">🔑 관리자</button><button id="addg" hidden>+ 길드 추가 / 색 변경</button><button id="lbtn" hidden>변경 기록</button><button id="mgr" hidden>닉네임 관리</button><button id="acb" hidden>접근 관리</button><button id="lo" hidden>로그아웃</button></div>
 <div id="boss">⏳ 필보 시각 정보를 기다리는 중… (모드가 자동으로 알려줘요)</div>
 <div id="note"></div>
-<div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button><button id="t3">통계</button><button id="t2">건의사항</button></div>
+<div class="tabs"><button id="t0" class="on">오전</button><button id="t1">오후</button><button id="t3">통계</button><button id="t4">기록</button><button id="t2">건의사항</button></div>
 <div class="grid" id="grid"></div>
 <div id="rec" class="st" hidden>
   <div class="card" id="st1"></div>
   <div class="card" id="st2"></div>
   <div class="card" id="st3"></div>
   <div class="card" id="st4"></div>
+</div>
+<div id="his" hidden>
+  <div class="card">
+    <div class="recnav"><button id="hprev">◀</button><b id="hday"></b><button id="hnext">▶</button><button id="htoday">오늘</button></div>
+    <input type="text" id="hq" placeholder="닉네임 검색 (최근 60일 전체에서 찾아요)" autocomplete="off">
+    <div class="sub" id="hsum" style="margin:8px 0 0"></div>
+  </div>
+  <div id="hl"></div>
 </div>
 <div id="sug" hidden>
   <div class="card">
@@ -325,11 +336,66 @@ $("save").onclick=async()=>{
 };
 function showTab(v){ // v: 0 오전, 1 오후, 2 건의사항, 3 기록
   if(v<2)period=v;
-  [0,1,2,3].forEach(x=>$("t"+x).classList.toggle("on",x===v));
-  $("grid").hidden=v>=2;$("sug").hidden=v!==2;$("rec").hidden=v!==3;
-  if(v===2)loadSug();else if(v===3)loadStats();else render();
+  [0,1,2,3,4].forEach(x=>$("t"+x).classList.toggle("on",x===v));
+  $("grid").hidden=v>=2;$("sug").hidden=v!==2;$("rec").hidden=v!==3;$("his").hidden=v!==4;
+  if(v===2)loadSug();else if(v===3)loadStats();else if(v===4)loadHistory();else render();
 }
-[0,1,2,3].forEach(p=>$("t"+p).onclick=()=>showTab(p));
+[0,1,2,3,4].forEach(p=>$("t"+p).onclick=()=>showTab(p));
+// ───── 기록: 날짜별 파티 이력 / 닉네임 검색 ─────
+let hisDay=today(),hisAll=null;
+const dAdd=(d,n)=>new Date(Date.parse(d+"T00:00:00Z")+n*864e5).toISOString().slice(0,10);
+const hourOf=id=>{const m=/^\d{4}-\d{2}-\d{2}_([01])_(\d+)$/.exec(id);return m?(+m[2]%12)+(m[1]==="1"?12:0):-1};
+const hLab=H=>`${H<12?"오전":"오후"} ${p2(H%12===0&&H>=12?12:H%12)}시`;
+const parseD=t=>{try{const d=JSON.parse(t);return d&&typeof d==="object"?d:null}catch(e){return null}};
+const hasData=d=>!!d&&((d.p||[]).some(a=>a&&a.length)||(d.w||[]).length>0||!!d.c);
+const resTag=r=>r?(r.result==="caught"?'<span class="tg ok">잡음</span>':'<span class="tg no">못 잡음</span>'):"";
+async function fetchLogs(from,to){
+  const {data}=await sb.from("boss_log").select("day,hour,result,channel").gte("day",from).lte("day",to);
+  const m={};(data||[]).forEach(r=>{m[r.day+"_"+r.hour]=r});return m;
+}
+async function loadHistory(){
+  const q=$("hq").value.trim().toLowerCase();
+  $("hl").innerHTML='<div class="sub">불러오는 중…</div>';
+  try{ if(q)await drawHisSearch(q);else await drawHisDay() }
+  catch(e){$("hl").innerHTML='<div class="sub">기록을 불러오지 못했어요. (schema_v10.sql 실행 여부를 확인해 주세요)</div>';$("hsum").textContent=""}
+}
+async function drawHisDay(){
+  const t=today();
+  $("hday").textContent=hisDay+(hisDay===t?" (오늘)":"");
+  $("hnext").disabled=hisDay>=t;$("htoday").disabled=hisDay===t;
+  const [{data,error},logs]=await Promise.all([sb.from("board_history").select("id,data").eq("day",hisDay),fetchLogs(hisDay,hisDay)]);
+  if(error)throw error;
+  const rows=(data||[]).map(r=>({H:hourOf(r.id),d:parseD(r.data)})).filter(r=>r.H>=0&&hasData(r.d)).sort((a,b)=>a.H-b.H);
+  let people=new Set();
+  $("hl").innerHTML=rows.length?rows.map(({H,d})=>{
+    const lg=logs[hisDay+"_"+H],ch=d.c||(lg&&lg.channel)||0;
+    let h=`<div class="hs"><div class="hh"><b>${hLab(H)}</b>${ch?`<span class="tg">${ch}채널</span>`:""}${resTag(lg)}</div>`;
+    MATS.forEach((mn,x)=>{const ms=(d.p||[])[x]||[];if(!ms.length)return;ms.forEach(m=>people.add(m.n.toLowerCase()));
+      h+=`<div class="hr"><span>${mn}</span><span>${ms.map(m=>chip(esc(m.n),m.g)).join(" ")}</span>${(d.s||[])[x]?`<span class="sub" style="margin:0">제출 ${esc(d.s[x])}</span>`:""}</div>`});
+    if((d.w||[]).length){d.w.forEach(m=>people.add(m.n.toLowerCase()));h+=`<div class="hr"><span>대기</span><span>${d.w.map(m=>chip(esc(m.n),m.g)).join(" ")}</span></div>`}
+    return h+"</div>"}).join(""):'<div class="sub">이 날은 기록이 없어요. (기록은 schema_v10.sql 을 실행한 시점부터 쌓여요)</div>';
+  const c=Object.values(logs).filter(r=>r.result==="caught").length,m=Object.values(logs).filter(r=>r.result==="missed").length;
+  $("hsum").textContent=rows.length?`참가 ${people.size}명 · ${rows.length}개 시간대${c+m?` · 잡음 ${c} / 못 잡음 ${m}`:""}`:"";
+}
+async function drawHisSearch(q){
+  const to=today(),from=dAdd(to,-60);
+  const [{data,error},logs]=await Promise.all([sb.from("board_history").select("id,day,data").gte("day",from).lte("day",to).limit(2000),fetchLogs(from,to)]);
+  if(error)throw error;
+  const hits=[];
+  (data||[]).forEach(r=>{const H=hourOf(r.id),d=parseD(r.data);if(H<0||!d)return;
+    MATS.forEach((mn,x)=>((d.p||[])[x]||[]).forEach(m=>{if(m.n.toLowerCase().includes(q))hits.push({day:r.day,H,mat:mn,m,c:d.c})}));
+    (d.w||[]).forEach(m=>{if(m.n.toLowerCase().includes(q))hits.push({day:r.day,H,mat:"대기",m,c:d.c})})});
+  hits.sort((a,b)=>a.day===b.day?b.H-a.H:a.day<b.day?1:-1);
+  $("hday").textContent="닉네임 검색";$("hnext").disabled=$("htoday").disabled=true;
+  const joined=hits.filter(h=>h.mat!=="대기"),c=joined.filter(h=>(logs[h.day+"_"+h.H]||{}).result==="caught").length,m=joined.filter(h=>(logs[h.day+"_"+h.H]||{}).result==="missed").length;
+  $("hsum").textContent=hits.length?`최근 60일 · 파티 참가 ${joined.length}회 · 대기 ${hits.length-joined.length}회${c+m?` · 잡은 파티 ${c} / 못 잡은 파티 ${m}`:""}`:"";
+  $("hl").innerHTML=hits.length?hits.slice(0,300).map(h=>{const lg=logs[h.day+"_"+h.H],ch=h.c||(lg&&lg.channel)||0;
+    return `<div class="hs"><div class="hh"><b>${h.day.slice(5).replace("-","/")} ${hLab(h.H)}</b><span class="tg">${h.mat}</span>${ch?`<span class="tg">${ch}채널</span>`:""}${resTag(lg)}<span>${chip(esc(h.m.n),h.m.g)}</span></div></div>`}).join(""):'<div class="sub">검색 결과가 없어요.</div>';
+}
+$("hprev").onclick=()=>{hisDay=dAdd(hisDay,-1);loadHistory()};
+$("hnext").onclick=()=>{hisDay=dAdd(hisDay,1);loadHistory()};
+$("htoday").onclick=()=>{hisDay=today();loadHistory()};
+let hqT=null;$("hq").oninput=()=>{clearTimeout(hqT);hqT=setTimeout(loadHistory,350)};
 // ───── 필보 결과 (잡음 / 못 잡음) · 통계 ─────
 let recData={};
 const cardH=i=>period?(i%12)+12:i%12;                       // 카드의 실제 시각(0~23)
